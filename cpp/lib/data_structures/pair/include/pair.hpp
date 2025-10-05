@@ -42,6 +42,9 @@ class pair {
     [[ nodiscard ]] const T1& first() const { return a; }
     [[ nodiscard ]] const T2& second() const { return b; }
 
+    pair& operator=(const pair& p) { a = p.a; b = p.b; return *this; };
+    pair& operator=(pair&& p) { a = std::move(p.a), b = std::move(p.b); return *this; };
+
     bool operator==(const pair& p) const { return a == p.a && b == p.b; };
     bool operator!=(const pair& p) const { return !(*this == p); };
     bool operator<(const pair& p) const { return a == p.a ? b < p.b : a < p.a; };
