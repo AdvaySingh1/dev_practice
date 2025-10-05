@@ -1,1 +1,3 @@
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests/bin)
+
 add_subdirectory(data_structures)

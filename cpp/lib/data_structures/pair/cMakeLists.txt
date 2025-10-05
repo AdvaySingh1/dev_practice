@@ -1,6 +1,6 @@
 
 file(GLOB SOURCES "src/*.cpp")
-add_library(pair ${SOURCES})
+add_library(pair SHARED ${SOURCES})
 
 target_include_directories(pair PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include

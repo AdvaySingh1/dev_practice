@@ -1,4 +1,4 @@
 #include <pair.hpp>
 int main(){
-    print_something();
+    // print_something();
 }
