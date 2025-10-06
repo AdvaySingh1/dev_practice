@@ -37,6 +37,7 @@ void insertion_sort(std::vector<int>& vec) {
 }
 
 
+
 // merge sort
 std::vector<int> _merge_sort(std::vector<int>& vec, int l, int r) {
     if (l >= r) return std::vector<int>();
@@ -68,6 +69,30 @@ void merge_sort(std::vector<int>& vec) {
     vec = std::move(_merge_sort(vec, 0, vec.size()));
 }
 
+// 2 3
+
+void _quick_sort(std::vector<int>& vec, int l, int r){
+    if (l >= r) return;
+    int pivot = vec[r];
+    int p = l; // points to last elt smaller
+    for (int i = l; i < r; ++i) {
+        if (vec[i] < vec[r]) {
+            std::swap(vec[p++], vec[i]);
+        }
+    }
+    std::swap(vec[p], vec[r]);
+    _quick_sort(vec, l, p-1);
+    _quick_sort(vec, p+1, r);
+}
+
+// quick_sort
+void quick_sort(std::vector<int>& vec) {
+    // find the pivot
+    _quick_sort(vec, 0, vec.size()-1);
+}
+// 1 4 6 1 6 2
+
+// 1 1 2 4 6 6
 
 int main()
 {
@@ -98,6 +123,13 @@ int main()
     std::cout << "Merge sort: ";
     std::copy(begin(vec2), end(vec2), std::ostream_iterator<int>(std::cout, " "));
     std::cout << std::endl;
+
+    vec2 = vec;
+    quick_sort(vec2);
+    std::cout << "Quick sort: ";
+    std::copy(begin(vec2), end(vec2), std::ostream_iterator<int>(std::cout, " "));
+    std::cout << std::endl;
+
 
 
 }
