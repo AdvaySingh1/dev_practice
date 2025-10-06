@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <vector>
+#include <random>
+#include <chrono>
 
 
 void sort(std::vector<int>& vec) {
@@ -90,12 +92,34 @@ void quick_sort(std::vector<int>& vec) {
     // find the pivot
     _quick_sort(vec, 0, vec.size()-1);
 }
-// 1 4 6 1 6 2
 
-// 1 1 2 4 6 6
+// faster merge sort
+
+static void merge_into(std::vector<int>& a, std::vector<int>& buf, int l, int m, int r) {
+    int i = l, j = m, k = l;
+    while (i < m && j < r) buf[k++] = (a[i] <= a[j] ? a[i++] : a[j++]);
+    while (i < m) buf[k++] = a[i++];
+    while (j < r) buf[k++] = a[j++];
+    for (int t = l; t < r; ++t) a[t] = buf[t];
+}
+
+static void mergesort(std::vector<int>& a, std::vector<int>& buf, int l, int r) {
+    if (r - l <= 1) return;
+    int m = l + (r - l) / 2;
+    mergesort(a, buf, l, m);
+    mergesort(a, buf, m, r);
+    merge_into(a, buf, l, m, r);
+}
+
+void merge_sort_2(std::vector<int>& a) {
+    if (a.size() < 2) return;
+    std::vector<int> buf(a.size());
+    mergesort(a, buf, 0, (int)a.size());
+}
 
 int main()
 {
+    // using namespace std::chrono;
     std::vector<int> vec({1, 4, 5, 6, 2, 23, 4, 5, 6});
 
     std::vector<int> vec2;
@@ -128,6 +152,74 @@ int main()
     quick_sort(vec2);
     std::cout << "Quick sort: ";
     std::copy(begin(vec2), end(vec2), std::ostream_iterator<int>(std::cout, " "));
+    std::cout << std::endl;
+
+
+
+    std::random_device rd;
+    std::mt19937 gen(rd()); 
+    std::uniform_int_distribution<> dist(1,100);
+    std::vector<int> nums(10000);
+    for (auto &n : nums) n = dist(gen);
+    
+
+
+    
+    vec2 = nums;
+    auto t_start = std::chrono::high_resolution_clock::now();
+    sort(vec2);
+    auto t_end = std::chrono::high_resolution_clock::now();
+    std::cout << "Testing sort: ";
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start);
+    std::cout << "Time taken: " << duration.count() << " ms\n";
+    std::cout << std::endl;
+
+    vec2 = nums;
+    t_start = std::chrono::high_resolution_clock::now();
+    bubble_sort(vec2);
+    t_end = std::chrono::high_resolution_clock::now();
+    std::cout << "Bubble sort: ";
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start);
+    std::cout << "Time taken: " << duration.count() << " ms\n";
+    std::cout << std::endl;
+
+
+    vec2 = nums;
+    t_start = std::chrono::high_resolution_clock::now();
+    insertion_sort(vec2);
+    t_end = std::chrono::high_resolution_clock::now();
+    std::cout << "Insertion sort: ";
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start);
+    std::cout << "Time taken: " << duration.count() << " ms\n";
+    std::cout << std::endl;
+
+
+    vec2 = nums;
+    t_start = std::chrono::high_resolution_clock::now();
+    merge_sort(vec2);
+    t_end = std::chrono::high_resolution_clock::now();
+    std::cout << "Merge sort: ";
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start);
+    std::cout << "Time taken: " << duration.count() << " ms\n";
+    std::cout << std::endl;
+
+    vec2 = nums;
+    t_start = std::chrono::high_resolution_clock::now();
+    merge_sort_2(vec2);
+    t_end = std::chrono::high_resolution_clock::now();
+    std::cout << "Merge sort 2: ";
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start);
+    std::cout << "Time taken: " << duration.count() << " ms\n";
+    std::cout << std::endl;
+
+
+    vec2 = nums;
+    t_start = std::chrono::high_resolution_clock::now();
+    quick_sort(vec2);
+    t_end = std::chrono::high_resolution_clock::now();
+    std::cout << "Quick sort: ";
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start);
+    std::cout << "Time taken: " << duration.count() << " ms\n";
     std::cout << std::endl;
 
 
