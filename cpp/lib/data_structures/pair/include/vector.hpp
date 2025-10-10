@@ -14,6 +14,8 @@ namespace dev_dst
             void reserve(uint32_t capacity);
             void resize(uint32_t size);
 
+            
+
 
         private:
             T* data;
