@@ -1,38 +1,97 @@
 #pragma once
 
+#include <cstddef>
+
 namespace dev_std {
 
-#include "callable.hpp"
-template <typename Ret, typename... Args>
-class functional;
 
-template <typename Ret, typename... Args>
-class functional<Ret(Args...)> {
-    private:
-        typedef dev_std::f_<Ret(Args...)> func_t;
-        func_t f_;
+template <typename R, typename... Args>
+class function;
+
+// synopsys
+template <typename R, typename... Args>
+class function<R(Args...)> {
+    private: // QUES: should these be in copy? Would there ever be a class which wants to inherit from this?
+    // function holder
+    void* fn_holder_ = nullptr;
+    // function invoker
+    R (*invoker)(void*, Args...) = nullptr;
+    // function deleter
+    void (*deleter)(void*) = nullptr;
+
     public:
-        functional() = default;
+    // default ctor, init to nullptr
+    function() = default;
+    // copy ctor. Copy the function and alloc onto heap
+    function(const function&);
+    // move ctor. Move the function and alloc onto heap
+    function(function&&) noexcept;
+    // copy function ctor. Copy the function and alloc onto heap
+    template <typename FN_T>
+    function(FN_T&);
+    // move function ctor. Move the function and alloc onto heap
+    template <typename FN_T>
+    function(FN_T&&);
+    // assignment operator
+    function& operator=(const function&);
+    function& operator=(function&&) noexcept;
 
-        template<FN_T>
-        functional(FN_T F): f_(F);
+    // capacity operator
+    [[nodiscard]] explicit operator bool() const noexcept;
 
-        ~functional() = default;
+    // comparison operator
+    [[nodiscard]] explicit bool operator==(const function&) const noexcept;
 
-        Ret operator (Args... args) const {return f_(args...)}
+    // invoker
+    R operator()(Args...) const;
 
-        bool operator == (const functional& other) const noexcept { return this == &other}
-        // bool operator = (const functional& other) const { return this == &other}; <- shold we even be able to have this
-        bool operator = (functional&& other) noexcept { f_(std::move(other.f_)) }
+    // destructor
+    ~function();
 
-        void swap (functional& other) noexcept { std::swap(*this, other);}
-
-        explicit operator bool() const noexcept {return f_ != nullptr; }
-
-
-
-
+    // swap operator
+    void swap(function&);
 
 };
+
+// nullptr comparisons
+template <typename R, typename... Args>
+[[nodiscard]] bool operator==(function<R(Args...)>, nullptr_t);
+
+template <typename R, typename... Args>
+[[nodiscard]] bool operator==(nullptr_t, function<R(Args...)>);
+
+template <typename R, typename... Args>
+[[nodiscard]] bool operator!=(function<R(Args...)>, nullptr_t);
+
+template <typename R, typename... Args>
+[[nodiscard]] bool operator!=(nullptr_t, function<R(Args...)>);
+
+
+
+
+/*
+Implementations can't be in cpp files since you can't link against templated functions
+as they are not compiled at compile time, rather, at object init.
+Other files which only include the header file won't be able to see
+the templated types.
+*/
+
+
+template <typename R, typename... Args, typename FN_T>
+function<R(Args...)>::(FN_T&);
+
+// copy ctor
+template <typename R, typename... Args>
+function<R(Args...)>::function(const function&) {
+    
+}
+
+// move ctor
+template <typename R, typename... Args>
+function<R(Args...)>::function(function&&) noexcept {
+    
+}
+
+
 
 }

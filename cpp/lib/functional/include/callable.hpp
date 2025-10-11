@@ -1,5 +1,5 @@
 #pragma once
-
+#include <functional> <- reference
 
 namespace dev_std {
 // forward decl
@@ -63,11 +63,53 @@ class callable<Ret(Args...)> {
             if (deleter_) deleter_(callable_); // same as (*deleter)(callable_);
         }
 
-
+        // function invocation
         Ret operator ()(Args... args) {
             return invoker_(callable_, args...); // same as (*invoker_)(callable_, args...);
         }
 
+        // function capacity
+        explicit operator bool () const noexcept {
+            return callable_ != nullptr;
+        }
+
+        // TODO
+        callable& operator=(const callable& other) {}
+        callable& operator=(callable&& other) noexcept {}
+        callable& operator=(nullptr_t) noexcept {}
+
+        template <typename FN_T>
+        callable& operator=(const FN_T& f) {}
+
+        template <typename FN_T>
+        callable& operator=(FN_T&& f) noexcept {}
+
+        void swap(callable& other) {}
+
+
+
+
 };
+
+    // nullptr comparison
+    template <typename Ret, typename... Args>
+    bool operator==(callable<Ret(Args...)> c, nullptr_t) noexcept {
+         return !static_cast<bool>(c); 
+    }
+
+    template <typename Ret, typename... Args>
+    bool operator==(nullptr_t, callable<Ret(Args...)> c) noexcept {
+         return !static_cast<bool>(c); 
+    }
+
+    template <typename Ret, typename... Args>
+    bool operator!=(callable<Ret(Args...)> c, nullptr_t) noexcept {
+         return static_cast<bool>(c); 
+    }
+
+    template <typename Ret, typename... Args>
+    bool operator!=(nullptr_t, callable<Ret(Args...)> c) noexcept {
+         return static_cast<bool>(c); 
+    }
 
 }
