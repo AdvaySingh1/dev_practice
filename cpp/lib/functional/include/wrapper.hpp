@@ -1,6 +1,11 @@
 #pragma once
-
 #include <cstddef>
+#include "types.hpp"
+
+#ifdef DEBUG
+#include <iostream>
+#endif
+
 
 namespace dev_std {
 
@@ -23,24 +28,24 @@ class function<R(Args...)> {
     // default ctor, init to nullptr
     function() = default;
     // copy ctor. Copy the function and alloc onto heap
-    function(const function&);
+    // function(const function&);
     // move ctor. Move the function and alloc onto heap
-    function(function&&) noexcept;
+    // function(function&&) noexcept;
     // copy function ctor. Copy the function and alloc onto heap
     template <typename FN_T>
-    function(FN_T&);
+    function(const FN_T&);
     // move function ctor. Move the function and alloc onto heap
     template <typename FN_T>
-    function(FN_T&&);
+    function(FN_T&&) noexcept;
     // assignment operator
-    function& operator=(const function&);
-    function& operator=(function&&) noexcept;
+    // function& operator=(const function&);
+    // function& operator=(function&&) noexcept;
 
     // capacity operator
     [[nodiscard]] explicit operator bool() const noexcept;
 
     // comparison operator
-    [[nodiscard]] explicit bool operator==(const function&) const noexcept;
+    // [[nodiscard]] bool operator==(const function&) const noexcept;
 
     // invoker
     R operator()(Args...) const;
@@ -49,7 +54,15 @@ class function<R(Args...)> {
     ~function();
 
     // swap operator
-    void swap(function&);
+    // void swap(function&);
+
+
+    private:
+    // helper functions
+
+    template <typename FN_T>
+    void set_invoker_and_deleter();
+
 
 };
 
@@ -76,22 +89,116 @@ Other files which only include the header file won't be able to see
 the templated types.
 */
 
+// template <typename R, typename... Args>
+// function<R(Args...)>::function(const function& F) {
+//     // TODO
+// }
 
-template <typename R, typename... Args, typename FN_T>
-function<R(Args...)>::(FN_T&);
+// template <typename R, typename... Args>
+// function<R(Args...)>::function(function&& F) noexcept {
+//     // TODO
+// }
 
-// copy ctor
+/*
+    The following can be problamatic in certain cases when you copy
+    member variables from other functions. For example, consider
+    std::unique_pointers. This implicitly forwards ownership.
+*/
 template <typename R, typename... Args>
-function<R(Args...)>::function(const function&) {
-    
+template <typename FN_T>
+function<R(Args...)>::function(const FN_T& F) {
+    // copy the other function into the pointer
+    fn_holder_ = reinterpret_cast<void*>(new FN_T((F))); // ensure lvalue
+
+    // set the invoker and deleter based on the type
+    set_invoker_and_deleter<FN_T>();
+
+    #ifdef DEBUG
+    std::cout << "lvalue ctor called" << std::endl;
+    #endif
+
 }
 
-// move ctor
 template <typename R, typename... Args>
-function<R(Args...)>::function(function&&) noexcept {
-    
+template <typename FN_T>
+function<R(Args...)>::function(FN_T&& F) noexcept {
+    // copy the function object onto the heap
+    fn_holder_ = reinterpret_cast<void*>(new FN_T(dev_std::move(F))); // ensure rvalue
+
+    // set the invoker and deleter based on the type
+    set_invoker_and_deleter<FN_T>();
+
+    #ifdef DEBUG
+    std::cout << "rvalue ctor called" << std::endl;
+    #endif
+}
+
+template <typename R, typename... Args>
+[[nodiscard]] function<R(Args...)>::operator bool() const noexcept{
+    return fn_holder_ != nullptr;
+}
+
+template <typename R, typename... Args>
+R function<R(Args...)>::operator()(Args... args) const {
+    if (!*this) {
+        // TODO: throw and exception
+        #ifdef DEBUG
+            std::cerr << "Invoked empty functional class instance!";
+        #endif
+        return R();
+    }
+    return invoker(fn_holder_, args...);
+}
+
+template <typename R, typename... Args>
+function<R(Args...)>::~function() {
+    if (*this) { // check if fn_holder_ is nullptr
+        deleter(fn_holder_);
+    }
 }
 
 
 
+
+template <typename R, typename... Args>
+[[nodiscard]] bool operator==(function<R(Args...)> f, nullptr_t){
+    return static_cast<bool>(f);
 }
+
+template <typename R, typename... Args>
+[[nodiscard]] bool operator==(nullptr_t, function<R(Args...)> f){
+    return static_cast<bool>(f);
+}
+
+template <typename R, typename... Args>
+[[nodiscard]] bool operator!=(function<R(Args...)> f, nullptr_t){
+    return static_cast<bool>(f);
+}
+
+template <typename R, typename... Args>
+[[nodiscard]] bool operator!=(nullptr_t, function<R(Args...)> f){
+    return static_cast<bool>(f);
+}
+
+
+
+// helper functions
+
+template <typename R, typename... Args>
+template <typename FN_T>
+void function<R(Args...)>::set_invoker_and_deleter() {
+    // set the type of the invoker
+    invoker = [](void* fn_holder, Args... args) -> R{
+        FN_T* f = reinterpret_cast<FN_T*>(fn_holder);
+        return (*f)(args...);
+    };
+
+    // set the deletor
+    deleter = [](void* fn_holder) -> void{
+        FN_T* f = reinterpret_cast<FN_T*>(fn_holder);
+        delete f;
+    };
+}
+
+}
+

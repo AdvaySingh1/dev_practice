@@ -1,3 +1,5 @@
 
 # pair
 add_subdirectory(pair)
+
+# TODO add a loop

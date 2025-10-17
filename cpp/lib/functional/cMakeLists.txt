@@ -1,0 +1,5 @@
+add_library(functional INTERFACE)
+target_include_directories(functional 
+    INTERFACE include)
+target_link_libraries(functional 
+    INTERFACE types)

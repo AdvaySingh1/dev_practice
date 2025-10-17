@@ -52,6 +52,8 @@
         "unordered_map": "cpp",
         "variant": "cpp",
         "vector": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "cassert": "cpp",
+        "__assert": "cpp"
     }
 }

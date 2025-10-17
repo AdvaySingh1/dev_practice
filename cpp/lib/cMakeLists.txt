@@ -1,3 +1,7 @@
 add_subdirectory(data_structures)
 add_subdirectory(locks)
 add_subdirectory(functional)
+
+
+add_library(types INTERFACE)
+target_include_directories(types INTERFACE types)
