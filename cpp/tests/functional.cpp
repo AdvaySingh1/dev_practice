@@ -48,6 +48,42 @@ int main() {
     std::cout << "f3: " << f3(3, 5) << std::endl;
     std::cout << "f4: " << f4(3, 5) << std::endl;
     
+
+    std::cout << "Checking copy ctors" << std::endl;
+    std::cout << "Now creating f5 " << std::endl;
+    // need to cast it as const
+    dev_std::function<int(const int, const int)> f5((static_cast<const dev_std::function<int(const int, const int)>&>(f1)));
+    std::cout << "f1: " << f1(3, 5) << std::endl;
+    std::cout << "f2: " << f2(3, 5) << std::endl;
+    std::cout << "f5: " << f5(3, 5) << std::endl;
+
+    std::cout << "Now assigning f1 to f2 " << std::endl;
+    f1 = f2;
+    std::cout << "f1: " << f1(3, 5) << std::endl;
+    std::cout << "f2: " << f2(3, 5) << std::endl;
+    std::cout << "f5: " << f5(3, 5) << std::endl;
+
+    std::cout << "Checking move ctors" << std::endl;
+    dev_std::function<int(const int, const int)> f6(
+        dev_std::function<int(const int, const int)>(
+        [](int a, int b) -> int{
+            return a + b;
+        }));
+    std::cout << "f6: " << f6(3, 5) << std::endl;
+    std::cout << "Chanding f6" << std::endl;
+    f6 = dev_std::function<int(const int, const int)>(
+        [](int a, int b) -> int{
+            return a - b;
+        });
+    std::cout << "f6: " << f6(3, 5) << std::endl;
+
+    std::cout << "Now testing swap " << std::endl;
+    std::cout << "f1: " << f1(3, 5) << std::endl;
+    std::cout << "f6: " << f6(3, 5) << std::endl;
+    swap(f1, f6);
+    std::cout << "After the swap " << std::endl;
+    std::cout << "f1: " << f1(3, 5) << std::endl;
+    std::cout << "f6: " << f6(3, 5) << std::endl;
     
     
     
