@@ -12,6 +12,7 @@ namespace dev_std {
         private:
             std::atomic_bool lock = 0; 
         public:
+        // TODO: call volatile but when? before noexcept
         void lock() noexcept;
         void unlock() noexcept;
     };
