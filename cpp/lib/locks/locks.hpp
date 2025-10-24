@@ -1,5 +1,6 @@
 #include <atomic>
 
+#include <barrier>
 
 // synopsys
 
@@ -192,5 +193,18 @@ namespace dev_std {
     if (y.load(acq_rel) == 1) {  // Sees My first
         assert(x.load(acq_rel) == 1);  // Mx hasn't arrived yet - FAIL
     }
+
+
+
+
+
+
+
+
+
+
+
+
+    std::thread::hardware_concurrency()
 */
 

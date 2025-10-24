@@ -5,5 +5,10 @@ add_executable(test_functional functional.cpp)
 target_link_libraries(test_functional PRIVATE functional)
 target_compile_definitions(test_functional PRIVATE DEBUG)
 
+
+add_executable(test_barrier barrier.cpp)
+target_link_libraries(test_barrier PRIVATE barrier)
+target_compile_definitions(test_barrier PRIVATE DEBUG)
+
 add_subdirectory(data_structures)
 add_subdirectory(elementary)

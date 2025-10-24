@@ -2,6 +2,7 @@
 
 #include "move.hpp"
 #include "forward.hpp"
+#include "ref.hpp"
 
 // TODO: give a synopsys on typing features
 
@@ -47,3 +48,16 @@
 */
 // template <typename T>
 // typename remove_reference<T>::type def_std::move(T&& val) noexcept;
+
+
+/**
+ * @brief Allows for the forwarding of references
+ * without expensive copies. See Barriers for sample
+ * use
+ * 
+ */
+// template <typename T>
+// reference<T> ref(T& t) noexcept { return reference<T>(T); }
+
+// template <typename T>
+// reference<const T> cref(const T& t) noexcept { return reference<const T>(T); }

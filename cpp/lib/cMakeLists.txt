@@ -1,6 +1,7 @@
 add_subdirectory(data_structures)
 add_subdirectory(locks)
 add_subdirectory(functional)
+add_subdirectory(barriers)
 
 
 add_library(types INTERFACE)

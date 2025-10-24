@@ -54,6 +54,9 @@
         "vector": "cpp",
         "functional": "cpp",
         "cassert": "cpp",
-        "__assert": "cpp"
+        "__assert": "cpp",
+        "barrier": "cpp",
+        "complex": "cpp",
+        "__availability": "cpp"
     }
 }
