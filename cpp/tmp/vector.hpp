@@ -3,6 +3,8 @@
 #include <iterator> // needed for iterator traits
 #include <stdio.h>  // todo: try this with cstio
 
+// #include <stdlib.h> // for malloc
+
 namespace dev_std {
 
 template <typename T> class vector {
@@ -64,8 +66,8 @@ public:
     iterator operator-(int);
     iterator &operator+=(int);
     iterator &operator-=(int);
-    iterator &operator=(const iterator &other);
-    iterator &operator=(iterator &&other) noexcept;
+    iterator &operator=(const iterator &);
+    iterator &operator=(iterator &&) noexcept;
     bool operator==(const iterator &) const noexcept;
     bool operator!=(const iterator &) const noexcept;
     explicit operator bool() const noexcept;
@@ -192,4 +194,52 @@ const_reverse_iterator
 
 
 pragmas
+
+
+
+struct BaseError : std::exception {};
+struct DerivedError : BaseError {};
+
+try {
+    throw DerivedError();   // throw derived
+} catch (const BaseError&) { // catch base
+    std::cout << "Caught via base\n";
+}
+
+
+
+
+What the new operator looks like:
+// new T
+T* p = new T(args);
+// Expands to:
+void* mem = ::operator new(sizeof(T));
+T* p = new (mem) T(args);  // placement new (calls constructor)
+
+// delete p
+delete p;
+// Expands to:
+p->~T();                    // call destructor
+::operator delete(p);       // deallocate
+
+
+// new T[n]
+T* arr = new T[n];
+// Expands to:
+void* mem = ::operator new[](sizeof(T) * n + overhead);  // extra space for
+count
+// store n somewhere in the allocation
+for (size_t i = 0; i < n; ++i) {
+    new (arr + i) T();      // placement new for each element
+}
+
+// delete[] arr
+delete[] arr;
+// Expands to:
+size_t n =
+for (size_t i = n; i > 0; --i) {
+    arr[i-1].~T();          // call destructor (reverse order)
+}
+::operator delete[](arr);   // deallocate
+
 */
