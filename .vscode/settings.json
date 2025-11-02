@@ -58,5 +58,6 @@
         "barrier": "cpp",
         "complex": "cpp",
         "__availability": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "/Users/advaysingh/Documents/dev_practice/cpp"
 }

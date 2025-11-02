@@ -1,7 +1,7 @@
-add_library(barrier INTERFACE)
+add_library(barrier barrier.cpp)
 target_include_directories(barrier
-    INTERFACE include)
+    PUBLIC include)
 target_link_libraries(barrier 
-    INTERFACE types
-    INTERFACE functional
+    PUBLIC types
+    PUBLIC functional
     )
