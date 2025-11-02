@@ -4,7 +4,9 @@
 namespace dev_std {
 
 // default ctor
-template <typename T> vector<T>::vector() = default;
+template <typename T> vector<T>::vector() : size_(0), capacity_(5) {
+  data_ = new T[capacity_];
+};
 
 // copy ctors
 template <typename T> vector<T>::vector(const vector &) {}
@@ -98,5 +100,18 @@ template <typename T>
 typename vector<T>::iterator vector<T>::insert(const iterator &, T &&) {}
 template <typename T>
 typename vector<T>::iterator vector<T>::erase(const iterator &) {}
+
+// helper functions
+template <typename T> void vector<T>::resize_(size_t) {}
+
+template <typename T> void vector<T>::copy_(const vector &) {}
+template <typename T> void vector<T>::move_(vector &&) noexcept {}
+
+template <typename T> void vector<T>::destroy_() noexcept {
+  delete[] data_;
+  data_ = nullptr;
+  size_ = 0;
+  capacity_ = 0;
+}
 
 } // namespace dev_std

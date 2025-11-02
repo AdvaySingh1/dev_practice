@@ -107,6 +107,9 @@ private:
 
   // double the size
   void resize_(size_t);
+  void copy_(const vector &);
+  void move_(vector &&) noexcept;
+  void destroy_() noexcept;
 };
 
 /* todo:
