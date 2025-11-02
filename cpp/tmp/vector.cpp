@@ -2,6 +2,7 @@
 #include <memory>
 #include <stdexcept> // std::out_of_range and has std::exception
 #include <stdio.h>   // todo: try this with cstio
+#include <utility>
 
 namespace dev_std {
 
@@ -17,9 +18,21 @@ template <typename T> vector<T>::vector(vector &&other) noexcept {
   move_(std::move(other));
 }
 
-template <typename T> vector<T>::vector(size_t, const T &) {}
+template <typename T>
+vector<T>::vector(size_t, const T &val) : size_(size), capacity_(size_ * 2) {
+  data_ = static_cast<T *>(::operator new(sizeof(T) * capacity_));
+  for (int i = 0; i < size_; ++i) {
+    ::new (data_ + i) T(val);
+  }
+}
 
-template <typename T> vector<T>::vector(size_t) {}
+template <typename T>
+vector<T>::vector(size_t size_) : size_(size), capacity_(size_ * 2) {
+  data_ = static_cast<T *>(::operator new(sizeof(T) * capacity_));
+  for (int i = 0; i < size_; ++i) {
+    ::new (data_ + i) T();
+  }
+}
 
 // destructor
 template <typename T> vector<T>::~vector() { destroy_(); }
@@ -32,19 +45,24 @@ template <typename T> void vector<T>::push_back(const T &val) {
   if (size_ * 2 >= capacity_) {
     resize_(capacity_ * 2);
   }
-  ::new (data_ + size_) T(val);
+  ::new (data_ + size_++) T(val);
 }
 template <typename T> void vector<T>::push_back(T &&val) {
   if (size_ * 2 >= capacity_) {
     resize_(capacity_ * 2);
   }
-  ::new (data_ + size_)
+  ::new (data_ + size_++)
       T(std::move(val)); // need placement new because of uninit data
 }
 
 template <typename T>
 template <typename... Args>
-void vector<T>::emplace_back(Args &&...) {}
+void vector<T>::emplace_back(Args &&...args) {
+  if (size_ * 2 >= capacity_) {
+    resize_(capacity_ * 2);
+  }
+  ::new (data_ + size_++) T(std::forward<Args>(args)...);
+}
 
 // delete
 template <typename T> void vector<T>::pop_back() {
@@ -52,53 +70,135 @@ template <typename T> void vector<T>::pop_back() {
     throw std::logic_error("Popping with 0 elements");
   }
   size_--;
+  delete data_[size_];
   if (size_ * 2 < capacity_ / 2) { // 1 / 4 usage only
     resize_(capacity_ / 2);
   }
 }
 
 // quick stats
-template <typename T> size_t vector<T>::size() const noexcept {}
-template <typename T> bool vector<T>::empty() const noexcept {}
+template <typename T> size_t vector<T>::size() const noexcept { return size_; }
+template <typename T> bool vector<T>::empty() const noexcept {
+  return size_ == 0;
+}
 
-template <typename T> T &vector<T>::front() {}
-template <typename T> const T &vector<T>::front() const {}
-template <typename T> T &vector<T>::back() {}
-template <typename T> const T &vector<T>::back() const {}
+template <typename T> T &vector<T>::front() {
+  if (empty()) {
+    throw std::logic_error(
+        "dev_std::vector::front instantiated with 0 elements");
+  }
+  return data_[0];
+}
+template <typename T> const T &vector<T>::front() const {
+  if (empty()) {
+    throw std::logic_error(
+        "dev_std::vector::front instantiated with 0 elements");
+  }
+  return data_[0];
+}
+template <typename T> T &vector<T>::back() {
+  if (empty()) {
+    throw std::logic_error(
+        "dev_std::vector::back instantiated with 0 elements");
+  }
+  return data_[size_ - 1];
+}
+template <typename T> const T &vector<T>::back() const {
+  if (empty()) {
+    throw std::logic_error(
+        "dev_std::vector::back instantiated with 0 elements");
+  }
+  return data_[size_ - 1];
+}
 
 // todo iterator class
-template <typename T> void vector<T>::reserve(size_t) {}
-template <typename T> void vector<T>::resize(size_t size) {}
-template <typename T> void vector<T>::clear() noexcept {}
+template <typename T> void vector<T>::reserve(size_t capacity) {
+  resize_(capacity);
+}
+template <typename T> void vector<T>::resize(size_t size) {
+  if (size < size_) {
+    throw std::logic_error(
+        "dev_std::vector::resize() instantiated with size smaller \
+                      than the current size ");
+  }
+
+  if (size >= capacity_ * 2) {
+    resize_(size * 2);
+  }
+  for (; size_ < size; ++size_) {
+    ::new (data_ + size_) T();
+  }
+}
+template <typename T> void vector<T>::clear() noexcept {
+  destroy_();
+  resize_(5);
+}
 
 template <typename T>
-typename vector<T>::iterator vector<T>::iterator::operator++(int) {} // postfix
+typename vector<T>::iterator vector<T>::iterator::operator++(int) noexcept {
+  return iterator(ptr_++);
+} // postfix
 template <typename T>
-typename vector<T>::iterator &vector<T>::iterator::operator++() {} // prefix
+typename vector<T>::iterator &vector<T>::iterator::operator++() noexcept {
+  return iterator(++ptr_);
+} // prefix
 template <typename T>
-typename vector<T>::iterator vector<T>::iterator::operator+(int) {}
+typename vector<T>::iterator vector<T>::iterator::operator--(int) noexcept {
+  return iterator(ptr_--);
+} // postfix
 template <typename T>
-typename vector<T>::iterator vector<T>::iterator::operator-(int) {}
+typename vector<T>::iterator &vector<T>::iterator::operator--() noexcept {
+  return iterator(--ptr_);
+} // prefix
 template <typename T>
-typename vector<T>::iterator &vector<T>::iterator::operator+=(int) {}
+typename vector<T>::iterator
+vector<T>::iterator::operator+(int val) const noexcept {
+  return iterator(ptr_ + val);
+}
 template <typename T>
-typename vector<T>::iterator &vector<T>::iterator::operator-=(int) {}
+typename vector<T>::iterator
+vector<T>::iterator::operator-(int val) const noexcept {
+  return iterator(ptr_ - val);
+}
 template <typename T>
 typename vector<T>::iterator &
-vector<T>::iterator::operator=(const iterator &other) {}
+vector<T>::iterator::operator+=(int val) noexcept {
+  ptr_ += val;
+  return *this;
+}
 template <typename T>
 typename vector<T>::iterator &
-vector<T>::iterator::operator=(iterator &&other) noexcept {}
+vector<T>::iterator::operator-=(int val) noexcept {
+  ptr_ -= val;
+  return *this;
+}
 template <typename T>
-bool vector<T>::iterator::operator==(const iterator &) const noexcept {}
+bool vector<T>::iterator::operator==(const iterator &other) const noexcept {
+  return ptr_ == other.ptr_;
+}
 template <typename T>
-bool vector<T>::iterator::operator!=(const iterator &) const noexcept {}
-template <typename T> vector<T>::iterator::operator bool() const noexcept {}
-template <typename T> T &vector<T>::iterator::operator*() const noexcept {}
-template <typename T> T *vector<T>::iterator::operator->() const noexcept {}
+bool vector<T>::iterator::operator!=(const iterator &other) const noexcept {
+  return ptr_ != other.ptr_;
+}
+template <typename T> vector<T>::iterator::operator bool() const noexcept {
+  return ptr_ != nullptr;
+}
+template <typename T> T &vector<T>::iterator::operator*() const noexcept {
+  return *ptr_;
+}
+template <typename T> T *vector<T>::iterator::operator->() const noexcept {
+  return ptr_;
+}
 
-template <typename T> typename vector<T>::iterator begin() {}
-template <typename T> typename vector<T>::iterator end() {}
+template <typename T>
+vector<T>::iterator::iterator(T *ptr) noexcept : ptr_(ptr) {}
+
+template <typename T> typename vector<T>::iterator vector<T>::begin() {
+  return iterator(data_);
+}
+template <typename T> typename vector<T>::iterator vector<T>::end() {
+  return iterator(data_ + size_ + 1);
+}
 
 // operators
 // assignment

@@ -60,28 +60,36 @@ public:
     using iterator_category =
         std::random_access_iterator_tag; // iterator categories
 
-    iterator operator++(int); // postfix
-    iterator &operator++();   // prefix
-    iterator operator+(int);
-    iterator operator-(int);
-    iterator &operator+=(int);
-    iterator &operator-=(int);
-    iterator &operator=(const iterator &);
-    iterator &operator=(iterator &&) noexcept;
+    iterator operator++(int) noexcept; // postfix
+    iterator &operator++() noexcept;   // prefix
+    iterator operator--(int) noexcept; // postfix
+    iterator &operator--() noexcept;   // prefix
+    iterator operator+(int) const noexcept;
+    iterator operator-(int) const noexcept;
+    iterator &operator+=(int) noexcept;
+    iterator &operator-=(int) noexcept;
+    iterator &operator=(const iterator &) noexcept =
+        default; // just copies member variables and returns *this
+    iterator &operator=(iterator &&) noexcept = default;
     bool operator==(const iterator &) const noexcept;
     bool operator!=(const iterator &) const noexcept;
     explicit operator bool() const noexcept;
-    T &operator*() const noexcept;
+    T &operator*() const noexcept; // const version in const iterator
     T *operator->() const noexcept;
 
   private:
-    T *ptr_;
+    T *ptr_ = nullptr;
+    friend class vector;
+    iterator() noexcept = default;
+    iterator(T *) noexcept;
   };
 
   friend class iterator; // allow data member access
 
   // const_iterator begin() const; -> add with const_iterator begin() const;
-  iterator begin();
+  iterator begin(
+
+  );
   iterator end();
   // const_iterator end() const;
 
