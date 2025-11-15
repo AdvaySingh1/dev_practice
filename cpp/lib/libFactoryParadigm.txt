@@ -1,0 +1,104 @@
+Factory And Library Paradigms in C++
+
+Exmple:
+#pragma once
+#include <memory>
+#include <string>
+
+namespace ImageLib {
+
+class IImageProcessor {
+public:
+    virtual ~IImageProcessor() = default;
+    virtual void loadImage(const std::string& path) = 0;
+    virtual void applyFilter(const std::string& filterName) = 0;
+    virtual void save(const std::string& path) = 0;
+};
+
+// Factory function with a mode argument
+std::unique_ptr<IImageProcessor> createImageProcessor(bool useGPU);
+
+} // namespace ImageLib
+cpp
+Copy code
+// ===== Implementation (image_processor.cpp) =====
+#include "image_processor.h"
+#include <iostream>
+
+namespace ImageLib {
+
+class CPUImageProcessor : public IImageProcessor {
+public:
+    void loadImage(const std::string& path) override {
+        std::cout << "[CPU] Loading " << path << "\n";
+    }
+    void applyFilter(const std::string& filterName) override {
+        std::cout << "[CPU] Applying " << filterName << "\n";
+    }
+    void save(const std::string& path) override {
+        std::cout << "[CPU] Saving to " << path << "\n";
+    }
+};
+
+class GPUImageProcessor : public IImageProcessor {
+public:
+    void loadImage(const std::string& path) override {
+        std::cout << "[GPU] Loading " << path << " into VRAM\n";
+    }
+    void applyFilter(const std::string& filterName) override {
+        std::cout << "[GPU] Running shader: " << filterName << "\n";
+    }
+    void save(const std::string& path) override {
+        std::cout << "[GPU] Saving from VRAM to " << path << "\n";
+    }
+};
+
+std::unique_ptr<IImageProcessor> createImageProcessor(bool useGPU) {
+    if (useGPU)
+        return std::make_unique<GPUImageProcessor>();
+    else
+        return std::make_unique<CPUImageProcessor>();
+}
+
+} // namespace ImageLib
+
+Or, if the means is known at compile time:
+template <typename Impl>
+std::unique_ptr<IImageProcessor> createImageProcessor() {
+    return std::make_unique<Impl>();
+}
+
+// usage
+auto proc = createImageProcessor<GPUImageProcessor>();
+
+
+
+C Vtable Pattern to Simulate Virtual Functions
+Note this can also be done by keeping an object in C++ and calling that objects functions. This is called dependency injection. Similar to the provider paradigm.
+You're probably thinking of function pointer registration or vtable simulation:
+
+
+c
+// C approach with function pointers
+typedef struct ImageProcessor ImageProcessor;
+
+typedef struct {
+    void (*load)(ImageProcessor* self, const char* path);
+    void (*filter)(ImageProcessor* self, const char* filter);
+    void (*save)(ImageProcessor* self, const char* path);
+} ImageProcessorVTable;
+
+struct ImageProcessor {
+    ImageProcessorVTable* vtable;
+    void* private_data;  // opaque implementation
+};
+
+// Factory function
+ImageProcessor* image_processor_create(void);
+void image_processor_destroy(ImageProcessor* proc);
+
+// Usage
+void image_processor_load(ImageProcessor* proc, const char* path) {
+    proc->vtable->load(proc, path);
+}
+This is essentially manual vtable implementation - simulating C++ virtual functions in C.

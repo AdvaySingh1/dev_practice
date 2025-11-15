@@ -1,0 +1,231 @@
+Smart Ptr Impls
+
+Smart Pointer Implementations
+Simplified unique_ptr Implementation
+
+
+cpp
+template<typename T>
+class unique_ptr {
+private:
+    T* ptr;
+
+public:
+    // Constructor
+    explicit unique_ptr(T* p = nullptr) : ptr(p) {}
+    
+    // Destructor - automatically deletes
+    ~unique_ptr() {
+        delete ptr;
+    }
+    
+    // Delete copy operations - unique ownership!
+    unique_ptr(const unique_ptr&) = delete;
+    unique_ptr& operator=(const unique_ptr&) = delete;
+    
+    // Move constructor - transfer ownership
+    unique_ptr(unique_ptr&& other) noexcept : ptr(other.ptr) {
+        other.ptr = nullptr;  // other no longer owns it
+    }
+    
+    // Move assignment - transfer ownership
+    unique_ptr& operator=(unique_ptr&& other) noexcept {
+        if (this != &other) {
+            delete ptr;              // delete our current object
+            ptr = other.ptr;         // take ownership
+            other.ptr = nullptr;     // other gives up ownership
+        }
+        return *this;
+    }
+    
+    // Dereference operators
+    T& operator*() const { return *ptr; }
+    T* operator->() const { return ptr; }
+    
+    // Get raw pointer
+    T* get() const { return ptr; }
+    
+    // Release ownership (caller must delete)
+    T* release() {
+        T* temp = ptr;
+        ptr = nullptr;
+        return temp;
+    }
+    
+    // Replace owned pointer
+    void reset(T* p = nullptr) {
+        delete ptr;
+        ptr = p;
+    }
+};
+
+// Usage example
+void demo_unique() {
+    unique_ptr<int> p1(new int(42));
+    std::cout << *p1 << "\n";  // 42
+    
+    // unique_ptr<int> p2 = p1;  // ERROR: can't copy
+    unique_ptr<int> p2 = std::move(p1);  // OK: move ownership
+    
+    // p1 is now nullptr, p2 owns the int
+    std::cout << *p2 << "\n";  // 42
+}  // p2 destroyed, int is deleted automatically
+Simplified shared_ptr Implementation
+
+
+cpp
+template<typename T>
+class shared_ptr {
+private:
+    T* ptr;
+    size_t* ref_count;  // shared counter on heap
+    
+public:
+    // Constructor
+    explicit shared_ptr(T* p = nullptr) 
+        : ptr(p), ref_count(p ? new size_t(1) : nullptr) {}
+    
+    // Destructor - delete only if last reference
+    ~shared_ptr() {
+        release();
+    }
+    
+    // Copy constructor - share ownership
+    shared_ptr(const shared_ptr& other) 
+        : ptr(other.ptr), ref_count(other.ref_count) {
+        if (ref_count) {
+            ++(*ref_count);  // increment reference count
+        }
+    }
+    
+    // Copy assignment - share ownership
+    shared_ptr& operator=(const shared_ptr& other) {
+        if (this != &other) {
+            release();                    // release our current object
+            ptr = other.ptr;              // share the pointer
+            ref_count = other.ref_count;  // share the counter
+            if (ref_count) {
+                ++(*ref_count);           // increment count
+            }
+        }
+        return *this;
+    }
+    
+    // Move constructor - transfer without incrementing
+    shared_ptr(shared_ptr&& other) noexcept 
+        : ptr(other.ptr), ref_count(other.ref_count) {
+        other.ptr = nullptr;
+        other.ref_count = nullptr;
+    }
+    
+    // Move assignment
+    shared_ptr& operator=(shared_ptr&& other) noexcept {
+        if (this != &other) {
+            release();
+            ptr = other.ptr;
+            ref_count = other.ref_count;
+            other.ptr = nullptr;
+            other.ref_count = nullptr;
+        }
+        return *this;
+    }
+    
+    // Dereference operators
+    T& operator*() const { return *ptr; }
+    T* operator->() const { return ptr; }
+    
+    // Get raw pointer
+    T* get() const { return ptr; }
+    
+    // Get reference count
+    size_t use_count() const { 
+        return ref_count ? *ref_count : 0; 
+    }
+    
+private:
+    void release() {
+        if (ref_count) {
+            --(*ref_count);           // decrement count
+            if (*ref_count == 0) {    // last reference?
+                delete ptr;           // delete the object
+                delete ref_count;     // delete the counter
+            }
+        }
+    }
+};
+
+// Usage example
+void demo_shared() {
+    shared_ptr<int> p1(new int(42));
+    std::cout << "Count: " << p1.use_count() << "\n";  // 1
+    
+    {
+        shared_ptr<int> p2 = p1;  // OK: share ownership
+        std::cout << "Count: " << p1.use_count() << "\n";  // 2
+        std::cout << *p2 << "\n";  // 42
+    }  // p2 destroyed, count decreases
+    
+    std::cout << "Count: " << p1.use_count() << "\n";  // 1
+}  // p1 destroyed, int is deleted
+Key Differences Illustrated
+
+
+cpp
+void compare() {
+    // UNIQUE_PTR - Single owner
+    unique_ptr<int> u1(new int(10));
+    // unique_ptr<int> u2 = u1;           // ERROR: can't copy
+    unique_ptr<int> u2 = std::move(u1);   // OK: transfer ownership
+    // u1 is now nullptr
+    
+    // SHARED_PTR - Multiple owners
+    shared_ptr<int> s1(new int(20));
+    shared_ptr<int> s2 = s1;              // OK: both own it
+    shared_ptr<int> s3 = s1;              // OK: all three own it
+    std::cout << s1.use_count() << "\n";  // 3
+    // Object deleted when last shared_ptr is destroyed
+}
+```
+
+## Memory Layout Comparison
+```
+UNIQUE_PTR:
+┌──────────────┐
+│ unique_ptr   │
+├──────────────┤
+│ T* ptr    ───┼──→ [Object on heap]
+└──────────────┘
+
+SHARED_PTR:
+┌──────────────┐
+│ shared_ptr 1 │
+├──────────────┤
+│ T* ptr    ───┼──→ [Object on heap]
+│ size_t*   ───┼──┐
+└──────────────┘  │
+                  ↓
+┌──────────────┐  [ref_count = 3]
+│ shared_ptr 2 │  ↑
+├──────────────┤  │
+│ T* ptr    ───┼──┤
+│ size_t*   ───┼──┘
+└──────────────┘
+
+
+Optional Example
+template <typename T>
+class Optional {
+    bool has_value;
+    alignas(T) unsigned char storage[sizeof(T)];
+public:
+    Optional() : has_value(false) {}
+    Optional(const T& value) : has_value(true) {
+        new (&storage) T(value); // placement new
+    }
+    ~Optional() {
+        if (has_value) reinterpret_cast<T*>(&storage)->~T();
+    }
+
+    bool hasValue() const { return has_value; }
+    T& value() { return *reinterpret_cast<T*>(&storage); }
+};
